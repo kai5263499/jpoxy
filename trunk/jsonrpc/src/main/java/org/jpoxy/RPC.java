@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,9 +25,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.werxltd.jsonrpc.events.JSONRPCEventListener;
-import com.werxltd.jsonrpc.events.JSONRPCMessage;
-import com.werxltd.jsonrpc.events.JSONRPCMessageEvent;
+import org.jpoxy.events.JSONRPCEventListener;
+import org.jpoxy.events.JSONRPCMessage;
+import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
 
 /**
@@ -45,9 +45,6 @@ public class RPC extends HttpServlet {
 	private boolean DETAILED_ERRORS 	= false;
 	private boolean USE_FULL_CLASSNAME	= false;
 	
-	//private Response response;
-	//private Request request;
-
 	private HashMap<String, Object> rpcobjects;
 	private HashMap<String, Method> rpcmethods;
 
@@ -588,7 +585,7 @@ public class RPC extends HttpServlet {
 					+ param_count + " parameters not found.", -32601);
 		}
 
-                System.out.println("running methodsig: "+methodsig+" param_count:"+param_count);
+                LOG.debug("running methodsig: "+methodsig+" param_count:"+param_count);
 
 		try {
 			result = runMethod(m, param_count, methparams);

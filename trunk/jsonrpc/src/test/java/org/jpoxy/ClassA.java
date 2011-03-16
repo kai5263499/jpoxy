@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 public class ClassA {
 	public boolean init = false;

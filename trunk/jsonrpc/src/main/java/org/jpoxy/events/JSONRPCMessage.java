@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc.events;
+package org.jpoxy.events;
 
 import javax.servlet.ServletConfig;
 
