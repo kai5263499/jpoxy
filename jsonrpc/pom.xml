@@ -1,29 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.werxltd</groupId>
-	<artifactId>jsonrpc</artifactId>
+	<groupId>org</groupId>
+	<artifactId>jpoxy</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.5</version>
+	<version>1.0.6</version>
 	<name>jsonrpc</name>
 	<url>http://maven.apache.org</url>
-
-	<repositories>
-		<repository>
-			<id>codehaus-release-repo</id>
-			<name>Codehaus Release Repo</name>
-			<url>http://repository.codehaus.org</url>
-		</repository>
-	</repositories>
-
-	<distributionManagement>
-		<downloadUrl>http://maven.werxltd.com/</downloadUrl>
-		<repository>
-			<id>werxltd-scp</id>
-			<name>Werx Ltd. Maven Repository</name>
-			<url>scp://maven.werxltd.com:20022/sites/maven.werxltd.com/</url>
-		</repository>
-	</distributionManagement>
 
 	<developers>
 		<developer>
@@ -43,6 +26,20 @@
 			</properties>
 		</developer>
 	</developers>
+
+        <scm>
+                <connection>scm:svn:http://jpoxy.googlecode.com/svn/tags/jpoxy-1.0</connection>
+                <developerConnection>scm:svn:https://jpoxy.googlecode.com/svn/tags/jpoxy-1.0</developerConnection>
+                <url>http://jpoxy.googlecode.com/svn/tags/jpoxy-1.0</url>
+        </scm>
+
+	<distributionManagement>
+		<repository>
+			<id>jpoxy-webdav-repo</id>
+			<name>jpoxy repository</name>
+			<url>dav:https://jpoxy.googlecode.com/svn/maven/repo/</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
@@ -81,12 +78,24 @@
 	</dependencies>
 
 	<build>
+                <extensions>
+                        <extension>
+                                <groupId>org.apache.maven.wagon</groupId>
+                                <artifactId>wagon-webdav</artifactId>
+                                <version>1.0-beta-2</version>
+                        </extension>
+                </extensions>
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>true</filtering>
 			</resource>
 		</resources>
+                <testResources>
+                        <testResource>
+                                <directory>src/test/resources</directory>
+                        </testResource>
+                </testResources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -95,7 +104,18 @@
 					<target>1.5</target>
 				</configuration>
 			</plugin>
+                        <plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-source-plugin</artifactId>
+                                <executions>
+                                        <execution>
+                                                <goals>
+                                                        <goal>jar</goal>
+                                                </goals>
+                                        </execution>
+                                </executions>
+                        </plugin>
 		</plugins>
-		<finalName>jsonrpc</finalName>
+		<finalName>jpoxy</finalName>
 	</build>
 </project>

@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import org.json.JSONException;
 import org.json.JSONObject;

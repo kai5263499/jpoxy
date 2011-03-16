@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import java.util.Iterator;
 

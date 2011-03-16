@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 /**
  * A standardized exception class that conforms with JSON-RPC specifications.

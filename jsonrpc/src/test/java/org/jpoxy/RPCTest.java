@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -17,7 +17,7 @@ public class RPCTest extends TestCase {
 		tester = new ServletTester();
 		tester.setContextPath("/");
 		ServletHolder sh = tester.addServlet(RPC.class, "/api");
-		sh.setInitParameter("rpcclasses", "com.werxltd.jsonrpc.Example");
+		sh.setInitParameter("rpcclasses", "com.jpoxy.Example");
 		sh.setInitParameter("expose_methods", "true");
 		sh.setInitParameter("detailed_errors", "true");
 		tester.start();
@@ -41,6 +41,8 @@ public class RPCTest extends TestCase {
 		String requests = "GET /api HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
 		String responses = tester.getResponses(requests);
+
+                System.out.println("responses: "+responses);
 
 		String chunks[] = responses.split("\\r\\n");
 

@@ -1,13 +1,12 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.werxltd.jsonrpc.events.JSONRPCEventListener;
-import com.werxltd.jsonrpc.events.JSONRPCMessage;
-import com.werxltd.jsonrpc.events.JSONRPCMessageEvent;
+import org.jpoxy.events.JSONRPCEventListener;
+import org.jpoxy.events.JSONRPCMessage;
+import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.HashMap;
 
 public class ClassC implements JSONRPCEventListener {
