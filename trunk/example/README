@@ -1,0 +1,15 @@
+Simple Java JSON-RPC Example
+By: Wes Widner
+
+For more information and for latestest news and updates please visit:
+http://werxltd.com/wp/portfolio/json-rpc/simple-java-json-rpc/
+
+To run the example on localhost port 8080:
+mvn jetty:run
+
+This will compile the project, downloading any dependencies to the 
+local repo. To play with the service, use the following addresses
+
+http://localhost:8080/jsonrpc_example/example
+http://localhost:8080/jsonrpc_example/example?debug=true
+http://localhost:8080/jsonrpc_example/example?method=test&debug=true
