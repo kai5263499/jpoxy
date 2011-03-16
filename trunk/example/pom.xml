@@ -1,52 +1,48 @@
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.jpoxy</groupId>
-	<artifactId>example</artifactId>
-	<packaging>war</packaging>
-	<version>1.0.6</version>
-	<name>jpoxy-example</name>
-	<url>http://maven.apache.org</url>
-    
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.jpoxy</groupId>
+    <artifactId>example</artifactId>
+    <packaging>war</packaging>
+    <version>1.0.6</version>
+    <name>jpoxy-example</name>
+    <url>http://maven.apache.org</url>
+
     <repositories>
-      <repository>
-            <id>werxltd</id>
-            <name>Werx Limited</name>
-            <url>http://maven.werxltd.com</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
+        <repository>
+            <id>jpoxy-webdav-repo</id>
+            <name>jpoxy maven repository</name>
+            <url>dav:https://jpoxy.googlecode.com/svn/maven/repo/</url>
+            <layout>default</layout>
         </repository>
-	</repositories>
+    </repositories>
     
     
     <developers>
         <developer>
-          <id>wes</id>
-          <name>Wes</name>
-          <email>wes@werxltd.com</email>
-          <url>http://www.facebook.com/weswidner</url>
-          <organization>Werx Limited</organization>
-          <organizationUrl>http://werxltd.com</organizationUrl>
-          <roles>
-            <role>architect</role>
-            <role>developer</role>
-          </roles>
-          <timezone>-5</timezone>
-          <properties>
-            <picUrl>http://bit.ly/6rXWIw</picUrl>
-          </properties>
+            <id>wes</id>
+            <name>Wes</name>
+            <email>wes@werxltd.com</email>
+            <url>http://www.facebook.com/weswidner</url>
+            <organization>Werx Limited</organization>
+            <organizationUrl>http://werxltd.com</organizationUrl>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>-5</timezone>
+            <properties>
+                <picUrl>http://bit.ly/6rXWIw</picUrl>
+            </properties>
         </developer>
     </developers>
     
-	<dependencies>
-		<dependency>
-            <groupId>com.werxltd</groupId>
-            <artifactId>jsonrpc</artifactId>
-            <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org</groupId>
+            <artifactId>jpoxy</artifactId>
+            <version>1.0.6</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -75,61 +71,61 @@
             <version>2.4</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-		  <groupId>org.mortbay.jetty</groupId>
-		  <artifactId>jetty-servlet-tester</artifactId>
-		  <version>6.1.6</version>
-		  <scope>test</scope>
-		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>jetty-servlet-tester</artifactId>
+            <version>6.1.6</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     
-	<build>
+    <build>
         <resources>
-          <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
-          </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
         </resources>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.5</source>
-					<target>1.5</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.mortbay.jetty</groupId>
-				<artifactId>maven-jetty-plugin</artifactId>
-				<version>6.1.10</version>
-				<configuration>
-					<scanIntervalSeconds>10</scanIntervalSeconds>
-					<stopKey>foo</stopKey>
-					<stopPort>9001</stopPort>
-				</configuration>
-				<executions>
-					<execution>
-						<id>start-jetty</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<scanIntervalSeconds>0</scanIntervalSeconds>
-							<daemon>true</daemon>
-							<port>9001</port>
-						</configuration>
-					</execution>
-					<execution>
-						<id>stop-jetty</id>
-						<phase>post-integration-test</phase>
-						<goals>
-							<goal>stop</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-		<finalName>jsonrpc_example</finalName>
-	</build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>maven-jetty-plugin</artifactId>
+                <version>6.1.10</version>
+                <configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <stopKey>foo</stopKey>
+                    <stopPort>9001</stopPort>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-jetty</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <scanIntervalSeconds>0</scanIntervalSeconds>
+                            <daemon>true</daemon>
+                            <port>9001</port>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-jetty</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <finalName>jpoxy-example</finalName>
+    </build>
 </project>
