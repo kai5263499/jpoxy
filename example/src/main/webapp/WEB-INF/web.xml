@@ -1,0 +1,32 @@
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee ">
+
+<!-- Servlets -->
+	<servlet>
+		<servlet-name>example</servlet-name>
+		<servlet-class>com.werxltd.jsonrpc.RPC</servlet-class>
+		<init-param>
+			<param-name>rpcclasses</param-name>
+			<param-value>com.werxltd.jsonrpc.Example</param-value>
+		</init-param>
+		<init-param>
+			<param-name>expose_methods</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>persist_class</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>detailed_errors</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>example</servlet-name>
+		<url-pattern>/example</url-pattern>
+	</servlet-mapping>
+
+</web-app>
