@@ -5,10 +5,10 @@
 <!-- Servlets -->
 	<servlet>
 		<servlet-name>example</servlet-name>
-		<servlet-class>com.werxltd.jsonrpc.RPC</servlet-class>
+		<servlet-class>org.jpoxy.RPC</servlet-class>
 		<init-param>
 			<param-name>rpcclasses</param-name>
-			<param-value>com.werxltd.jsonrpc.Example</param-value>
+			<param-value>org.jpoxy.Example</param-value>
 		</init-param>
 		<init-param>
 			<param-name>expose_methods</param-name>
