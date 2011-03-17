@@ -13,7 +13,7 @@
         <repository>
             <id>jpoxy-webdav-repo</id>
             <name>jpoxy maven repository</name>
-            <url>dav:https://jpoxy.googlecode.com/svn/maven/repo/</url>
+            <url>http://jpoxy.googlecode.com/svn/maven/repo/</url>
             <layout>default</layout>
         </repository>
     </repositories>
