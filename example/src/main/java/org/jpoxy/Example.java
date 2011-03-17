@@ -1,4 +1,4 @@
-package com.werxltd.jsonrpc;
+package org.jpoxy;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -8,11 +8,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.json.JSONObject;
+import org.jpoxy.events.JSONRPCEventListener;
+import org.jpoxy.events.JSONRPCMessage;
+import org.jpoxy.events.JSONRPCMessageEvent;
 
-import com.werxltd.jsonrpc.events.JSONRPCEventListener;
-import com.werxltd.jsonrpc.events.JSONRPCMessage;
-import com.werxltd.jsonrpc.events.JSONRPCMessageEvent;
+import org.json.JSONObject;
 
 public class Example implements JSONRPCEventListener {
 	private ServletConfig config;
@@ -76,17 +76,6 @@ public class Example implements JSONRPCEventListener {
 		switch(me.message().getCode()) {
 			case JSONRPCMessage.INIT:
 				config = me.message().getServletConfig();
-			break;
-			case JSONRPCMessage.BEFOREREQUEST:
-				request = me.message().getRequest();
-				session = request.getSession(true);
-			break;
-			case JSONRPCMessage.BEFORERESPONSE:
-				response = me.message().getHttpResponse();
-				response.setContentType("text/html");
-			break;
-			case JSONRPCMessage.AFTERRESPONSE:
-				lastresponse = me.message().getRPCResponse();
 			break;
 		}
 	}
