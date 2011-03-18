@@ -6,6 +6,7 @@
 	<servlet>
 		<servlet-name>example</servlet-name>
 		<servlet-class>org.jpoxy.RPC</servlet-class>
+                <load-on-startup>1</load-on-startup>
 		<init-param>
 			<param-name>rpcclasses</param-name>
 			<param-value>org.jpoxy.Example</param-value>
@@ -26,7 +27,7 @@
 
 	<servlet-mapping>
 		<servlet-name>example</servlet-name>
-		<url-pattern>/example</url-pattern>
+		<url-pattern>/</url-pattern>
 	</servlet-mapping>
 
 </web-app>
