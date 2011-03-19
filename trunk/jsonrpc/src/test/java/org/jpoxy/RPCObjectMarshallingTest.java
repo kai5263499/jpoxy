@@ -1,6 +1,7 @@
 package org.jpoxy;
 
 import junit.framework.TestCase;
+import org.json.JSONArray;
 
 import org.json.JSONObject;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -36,9 +37,41 @@ public class RPCObjectMarshallingTest extends TestCase {
         assertEquals("", chunks[3]);
     }
 
-    public void testEditUserMethod() throws Exception {
+    public void testListMethods() throws Exception {
+        String requests = "GET /api HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
-        String requests = "GET /api?method=edit&name=Thomas%20A.%20Anderson&age=48"+
+        String responses = tester.getResponses(requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        JSONObject jsonObj = new JSONObject(chunks[4]);
+
+        assertNotNull(jsonObj);
+        assertTrue(jsonObj.has("jsonrpc"));
+        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+
+        JSONObject resultObj = jsonObj.getJSONObject("result");
+        assertNotNull(resultObj);
+
+        JSONArray methodArr = resultObj.getJSONArray("method");
+        assertNotNull(methodArr);
+        assertEquals(2, methodArr.length());
+
+        for (int i = 0; i < methodArr.length(); i++) {
+            JSONObject methodObj = methodArr.getJSONObject(i);
+            assertNotNull(methodObj);
+
+            assertTrue(methodObj.has("class"));
+            assertTrue(methodObj.has("name"));
+            assertTrue(methodObj.has("params"));
+            assertTrue(methodObj.has("returns"));
+            assertTrue(methodObj.has("static"));
+        }
+    }
+
+    public void testEditUserMethodGet() throws Exception {
+
+        String requests = "GET /api?method=edit&fullname=Thomas%20Anderson&age=48"+
                 " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
         String responses = tester.getResponses(requests);
@@ -59,8 +92,47 @@ public class RPCObjectMarshallingTest extends TestCase {
 
         JSONObject user = jsonObj.getJSONObject("result");
 
-        assertEquals("Neo", user.getString("name"));
-        assertEquals(22, user.getInt("age"));
-        assertFalse(user.has("class"));
+        assertEquals(28, user.getInt("age"));
+        assertEquals("Neo", user.getString("alias"));
+
+        assertTrue(user.has("name"));
+        JSONObject name = user.getJSONObject("name");
+        assertEquals("Thomas", name.getString("first"));
+        assertEquals("Anderson", name.getString("last"));
+    }
+
+    public void testEditUserMethodJson() throws Exception {
+
+        JSONObject requestObj = new JSONObject("{\"method\":\"edit\"}");
+        requestObj.put("params", new JSONObject("{\"name\":{\"first\":\"Thomas\",\"last\":\"Anderson\"},\"age\":48}"));
+
+        String requests = "GET /api?data="+requestObj.toString()+
+                " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
+
+        String responses = tester.getResponses(requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        JSONObject jsonObj = new JSONObject(chunks[4]);
+
+        assertNotNull(jsonObj);
+
+        assertTrue(jsonObj.has("jsonrpc"));
+        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+
+        assertFalse(jsonObj.has("error"));
+        assertTrue(jsonObj.has("result"));
+
+        JSONObject user = jsonObj.getJSONObject("result");
+
+        assertEquals(28, user.getInt("age"));
+        assertEquals("Neo", user.getString("alias"));
+
+        assertTrue(user.has("name"));
+        JSONObject name = user.getJSONObject("name");
+        assertEquals("Thomas", name.getString("first"));
+        assertEquals("Anderson", name.getString("last"));
     }
 }

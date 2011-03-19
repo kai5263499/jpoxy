@@ -6,11 +6,13 @@ public class ClassE {
     }
 
     public User edit(User user) {
-
-        System.out.println("in edit user method!! getName: "+user.getName()+" getAge: "+user.getAge());
-
-        user.setName("Neo");
-        user.setAge(22);
+        user.setAlias("Neo");
+        user.setAge(user.getAge()-20);
         return user;
+    }
+
+    @Jpoxy(enabled = false)
+    public boolean isTooOld() {
+        return false;
     }
 }

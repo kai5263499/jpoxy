@@ -5,7 +5,7 @@
     <groupId>org</groupId>
     <artifactId>jpoxy</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <name>jsonrpc</name>
     <url>http://maven.apache.org</url>
 
@@ -75,6 +75,11 @@
             <artifactId>jetty-servlet-tester</artifactId>
             <version>6.1.6</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>1.6.4</version>
         </dependency>
     </dependencies>
 
