@@ -29,6 +29,10 @@ import org.jpoxy.events.JSONRPCEventListener;
 import org.jpoxy.events.JSONRPCMessage;
 import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class creates a servlet which implements the JSON-RPC specification.
@@ -101,7 +105,7 @@ public class RPC extends HttpServlet {
 
 
             for (int o = 0; o < classnames.length; o++) {
-                LOG.debug("examining class: "+classnames[o]);
+                LOG.debug("examining class: " + classnames[o]);
                 Class<?> c = Class.forName(classnames[o]);
                 int classmodifiers = c.getModifiers();
 
@@ -141,7 +145,7 @@ public class RPC extends HttpServlet {
 
                     String methodsig = generateMethodSignature(methods[i]);
 
-                    LOG.debug("methodsig:"+methodsig);
+                    LOG.debug("methodsig:" + methodsig);
 
                     if (methodsig == null) {
                         continue;
@@ -252,7 +256,7 @@ public class RPC extends HttpServlet {
      * @return String Contains the "signature" of a Method object in the form of
      *         methodname:paramcount or test:3
      */
-    private String generateMethodSignature(Method m) {
+    private String generateMethodSignature(Method m) throws ClassNotFoundException {
         int parmscount = 0;
         Class<?> paramclasses[] = m.getParameterTypes();
 
@@ -264,10 +268,14 @@ public class RPC extends HttpServlet {
         }
 
         for (int j = 0; j < paramclasses.length; j++) {
+            //System.out.println("evaluating method param: "+paramclasses[j].getName());
+
             if (paramclasses[j].getName().matches("org.json.JSONObject")) {
                 return mname + ":JSONObject";
             } else if (paramclasses[j].getName().matches("java.util.HashMap")) {
                 return mname + ":HashMap";
+            } else if (j == 0 && paramclasses[j].getName().matches(".+\\..+") && !paramclasses[j].getName().matches("java.lang.String") && !paramclasses[j].getName().matches("org.jpoxy.events.JSONRPCMessageEvent")) {
+                return mname + ":Object";
             } else if (paramclasses[j].getName().matches("java.lang.String")
                     || paramclasses[j].isPrimitive()) {
                 parmscount++;
@@ -492,7 +500,7 @@ public class RPC extends HttpServlet {
     private Response handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException, JSONException,
             IllegalAccessException, InvocationTargetException,
-            JSONRPCException, ClassNotFoundException, IllegalArgumentException, InstantiationException {
+            JSONRPCException, ClassNotFoundException, IllegalArgumentException, InstantiationException, NoSuchMethodException {
 
         Request request = new Request();
         Response response = new Response();
@@ -552,6 +560,8 @@ public class RPC extends HttpServlet {
         Object result = new Object();
         Method m = null;
 
+        HashMap<String, ?> paramstohashmap = reqParamsToHashMap(req);
+
         Object methparams[] = null;
         if (rpcmethods.containsKey(method + ":JSONObject")) {
             m = rpcmethods.get(method + ":JSONObject");
@@ -582,7 +592,44 @@ public class RPC extends HttpServlet {
 
             param_count = 1;
             methparams = new Object[1];
-            methparams[0] = reqParamsToHashMap(req);
+            methparams[0] = paramstohashmap;
+        } else if (rpcmethods.containsKey(method + ":Object")) {
+            param_count = 1;
+            methparams = new Object[1];
+
+            m = rpcmethods.get(method + ":Object");
+            Class<?> paramclasses[] = m.getParameterTypes();
+            Object obj = paramclasses[0].newInstance();
+
+            Method[] methods = paramclasses[0].getMethods();
+
+            /**
+             * @TODO: This should be split out to a separate function so it can be called recursively.
+             */
+
+            for (Map.Entry<String, ?> me : paramstohashmap.entrySet()) {
+                for (Method pmethod : methods) {
+                    if (pmethod.getName().matches("^set" + RPC.ucfirst(me.getKey())) && pmethod.getParameterTypes().length == 1) {
+                        Class<?> paramtypes[] = pmethod.getParameterTypes();
+                        if (paramtypes[0].getName().matches("float")) {
+                            pmethod.invoke(obj, Float.parseFloat((String) me.getValue()));
+                        } else if (paramtypes[0].getName().matches("int")) {
+                            pmethod.invoke(obj, Integer.parseInt((String) me.getValue()));
+                        } else if (paramtypes[0].getName().matches("long")) {
+                            pmethod.invoke(obj, Long.getLong((String) me.getValue()));
+                        } else if (paramtypes[0].getName().matches("java.lang.String")) {
+                            pmethod.invoke(obj, (String) me.getValue());
+                        } else if (paramtypes[0].getName().matches("double")) {
+                            pmethod.invoke(obj, Double.parseDouble((String) me.getValue()));
+                        } else if (paramtypes[0].getName().matches("boolean")) {
+                            pmethod.invoke(obj, Boolean.parseBoolean((String) me.getValue()));
+                        }
+                    }
+                }
+
+            }
+
+            methparams[0] = obj;
         } else if (rpcmethods.containsKey(methodsig)) {
             m = rpcmethods.get(methodsig);
             if (param_count > 0) {
@@ -626,7 +673,16 @@ public class RPC extends HttpServlet {
         return response;
     }
 
-    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
+    public static String ucfirst(String string) {
+        String retval;
+
+        retval = string.toUpperCase(Locale.getDefault()).substring(0, 1)
+                + string.substring(1);
+
+        return retval;
+    }
+
+    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException, JSONException {
         int modifiers = m.getModifiers();
         Object result = new Object();
         if (Modifier.isStatic(modifiers)) {
@@ -657,6 +713,36 @@ public class RPC extends HttpServlet {
             }
         }
 
+        String resultclassname = result.getClass().getName();
+        if(resultclassname.matches(".+\\..+") && !resultclassname.matches("^org\\.json\\..+") && !resultclassname.matches("^java\\.lang\\..+") && !result.getClass().isPrimitive()) {
+
+            /**
+             * Serialize odd objects
+             * @TODO: This needs to be split out to a separate function as well so it can be called recursively on nested
+             * objects.
+             */
+
+            JSONObject retobj = new JSONObject();
+            Method[] methods = result.getClass().getMethods();
+            for (Method method : methods) {
+                String methodname = method.getName();
+                
+                Pattern pattern = Pattern.compile("^get(.*)");
+                Matcher matcher = pattern.matcher(methodname);
+                boolean matchFound = matcher.find();
+
+                if(matchFound && matcher.groupCount() == 1 && matcher.group(1).matches("Class")) {
+                    continue;
+                }
+
+                if (matchFound && method.getParameterTypes().length == 0) {
+                    retobj.put(matcher.group(1).toLowerCase(), method.invoke(result));
+                }
+            }
+
+            result = retobj;
+        }
+        
         return result;
     }
 }
