@@ -2,6 +2,8 @@ package org.jpoxy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -30,16 +32,20 @@ import org.jpoxy.events.JSONRPCMessage;
 import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
 import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
- * This class creates a servlet which implements the JSON-RPC specification.
+ * This class creates a servlet which implements the JSON-RPC 2.0 specification.
  * 
  * @author Wes Widner
  * 
  */
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface Jpoxy {
+  boolean enabled();
+}
+
 @SuppressWarnings("serial")
 public class RPC extends HttpServlet {
 
@@ -52,6 +58,7 @@ public class RPC extends HttpServlet {
     private HashMap<String, Method> rpcmethods;
     private List<JSONRPCEventListener> listeners = new ArrayList<JSONRPCEventListener>();
     private ServletConfig servletconfig;
+    private ObjectMapper objectmapper;
 
     /**
      * This method reads the servlet configuration for a list of classes it
@@ -79,7 +86,10 @@ public class RPC extends HttpServlet {
     public final void init(ServletConfig config) throws ServletException {
         LOG.debug("RPC init!");
 
+        objectmapper = new ObjectMapper();
+
         servletconfig = config;
+        Jpoxy jpoxyannotation;
         try {
             String classnames[] = servletconfig.getInitParameter("rpcclasses").replaceAll("\\s*", "").split(",");
 
@@ -139,7 +149,19 @@ public class RPC extends HttpServlet {
 
                 for (int i = 0; i < methods.length; i++) {
                     int methodmodifiers = methods[i].getModifiers();
-                    if (!Modifier.isPublic(methodmodifiers)) {
+
+                    // Auto-prune non-public methods and any methods that return data types we can't serialize
+                    if (!Modifier.isPublic(methodmodifiers) || (
+                            !objectmapper.canSerialize(methods[i].getReturnType()) &&
+                            !methods[i].getReturnType().equals(JSONObject.class) &&
+                            !methods[i].getReturnType().isPrimitive()
+                         )
+                       ) {
+                        continue;
+                    }
+
+                    jpoxyannotation = methods[i].getAnnotation(Jpoxy.class);
+                    if(jpoxyannotation != null && !jpoxyannotation.enabled()) {
                         continue;
                     }
 
@@ -257,7 +279,6 @@ public class RPC extends HttpServlet {
      *         methodname:paramcount or test:3
      */
     private String generateMethodSignature(Method m) throws ClassNotFoundException {
-        int parmscount = 0;
         Class<?> paramclasses[] = m.getParameterTypes();
 
         String mname;
@@ -267,24 +288,35 @@ public class RPC extends HttpServlet {
             mname = m.getName();
         }
 
-        for (int j = 0; j < paramclasses.length; j++) {
-            //System.out.println("evaluating method param: "+paramclasses[j].getName());
-
-            if (paramclasses[j].getName().matches("org.json.JSONObject")) {
-                return mname + ":JSONObject";
-            } else if (paramclasses[j].getName().matches("java.util.HashMap")) {
-                return mname + ":HashMap";
-            } else if (j == 0 && paramclasses[j].getName().matches(".+\\..+") && !paramclasses[j].getName().matches("java.lang.String") && !paramclasses[j].getName().matches("org.jpoxy.events.JSONRPCMessageEvent")) {
-                return mname + ":Object";
-            } else if (paramclasses[j].getName().matches("java.lang.String")
-                    || paramclasses[j].isPrimitive()) {
-                parmscount++;
-            } else {
+        if(paramclasses.length == 0) {
+            return mname + ":0";
+        } else if(paramclasses.length == 1) {
+            if(paramclasses[0].getName().matches("org.jpoxy.events.JSONRPCMessageEvent")) {
                 return null;
+            } else if (paramclasses[0].getName().matches("org.json.JSONObject")) {
+                return mname + ":JSONObject";
+            } else if (paramclasses[0].getName().matches("java.util.HashMap")) {
+                return mname + ":HashMap";
+            } else if (paramclasses[0].getName().matches(".+\\..+") &&
+                    !paramclasses[0].getName().matches("java.lang.String") &&
+                    objectmapper.canSerialize(paramclasses[0])
+              ) {
+                return mname + ":Object";
+            } else {
+                return mname + ":1";
             }
+        } else {
+            int parmscount = 0;
+            for (int j = 0; j < paramclasses.length; j++) {
+                if (paramclasses[j].getName().matches("java.lang.String")
+                        || paramclasses[j].isPrimitive()) {
+                    parmscount++;
+                } else {
+                    return null;
+                }
+            }
+            return mname + ":" + parmscount;
         }
-
-        return mname + ":" + parmscount;
     }
 
     /**
@@ -596,38 +628,21 @@ public class RPC extends HttpServlet {
         } else if (rpcmethods.containsKey(method + ":Object")) {
             param_count = 1;
             methparams = new Object[1];
-
             m = rpcmethods.get(method + ":Object");
             Class<?> paramclasses[] = m.getParameterTypes();
-            Object obj = paramclasses[0].newInstance();
 
-            Method[] methods = paramclasses[0].getMethods();
-
-            /**
-             * @TODO: This should be split out to a separate function so it can be called recursively.
-             */
-
-            for (Map.Entry<String, ?> me : paramstohashmap.entrySet()) {
-                for (Method pmethod : methods) {
-                    if (pmethod.getName().matches("^set" + RPC.ucfirst(me.getKey())) && pmethod.getParameterTypes().length == 1) {
-                        Class<?> paramtypes[] = pmethod.getParameterTypes();
-                        if (paramtypes[0].getName().matches("float")) {
-                            pmethod.invoke(obj, Float.parseFloat((String) me.getValue()));
-                        } else if (paramtypes[0].getName().matches("int")) {
-                            pmethod.invoke(obj, Integer.parseInt((String) me.getValue()));
-                        } else if (paramtypes[0].getName().matches("long")) {
-                            pmethod.invoke(obj, Long.getLong((String) me.getValue()));
-                        } else if (paramtypes[0].getName().matches("java.lang.String")) {
-                            pmethod.invoke(obj, (String) me.getValue());
-                        } else if (paramtypes[0].getName().matches("double")) {
-                            pmethod.invoke(obj, Double.parseDouble((String) me.getValue()));
-                        } else if (paramtypes[0].getName().matches("boolean")) {
-                            pmethod.invoke(obj, Boolean.parseBoolean((String) me.getValue()));
-                        }
-                    }
-                }
-
+            JSONObject mobj = request.getParamObj();
+            if(mobj == null) {
+                paramstohashmap.remove("request");
+                paramstohashmap.remove("method");
+                mobj = new JSONObject(paramstohashmap);
             }
+
+            if(mobj == null) {
+                throw new JSONRPCException("Could not convert parameters to valid JSONObject. JSON-RPC method [" + method + "].", -32601);
+            }
+
+            Object obj = objectmapper.readValue(mobj.toString(), paramclasses[0]);
 
             methparams[0] = obj;
         } else if (rpcmethods.containsKey(methodsig)) {
@@ -682,7 +697,7 @@ public class RPC extends HttpServlet {
         return retval;
     }
 
-    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException, JSONException {
+    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException, JSONException, IOException {
         int modifiers = m.getModifiers();
         Object result = new Object();
         if (Modifier.isStatic(modifiers)) {
@@ -715,32 +730,8 @@ public class RPC extends HttpServlet {
 
         String resultclassname = result.getClass().getName();
         if(resultclassname.matches(".+\\..+") && !resultclassname.matches("^org\\.json\\..+") && !resultclassname.matches("^java\\.lang\\..+") && !result.getClass().isPrimitive()) {
-
-            /**
-             * Serialize odd objects
-             * @TODO: This needs to be split out to a separate function as well so it can be called recursively on nested
-             * objects.
-             */
-
-            JSONObject retobj = new JSONObject();
-            Method[] methods = result.getClass().getMethods();
-            for (Method method : methods) {
-                String methodname = method.getName();
-                
-                Pattern pattern = Pattern.compile("^get(.*)");
-                Matcher matcher = pattern.matcher(methodname);
-                boolean matchFound = matcher.find();
-
-                if(matchFound && matcher.groupCount() == 1 && matcher.group(1).matches("Class")) {
-                    continue;
-                }
-
-                if (matchFound && method.getParameterTypes().length == 0) {
-                    retobj.put(matcher.group(1).toLowerCase(), method.invoke(result));
-                }
-            }
-
-            result = retobj;
+            String jsonstr = objectmapper.writeValueAsString(result);
+            result = new JSONObject(jsonstr);
         }
         
         return result;
