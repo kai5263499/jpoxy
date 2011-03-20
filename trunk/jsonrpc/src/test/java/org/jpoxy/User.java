@@ -1,5 +1,7 @@
 package org.jpoxy;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 public class User {
     public enum Gender { MALE, FEMALE };
 
@@ -20,9 +22,12 @@ public class User {
     private boolean _isVerified;
     private byte[] _userImage;
 
+    @JsonIgnore private User _me;
+
     public Name getName() { return _name; }
     public String getAlias() { return _alias; }
     public int getAge() { return _age; }
+    @JsonIgnore public User getMe() { return _me; }
     public boolean isVerified() { return _isVerified; }
     public Gender getGender() { return _gender; }
     public byte[] getUserImage() { return _userImage; }
@@ -30,6 +35,7 @@ public class User {
     public void setName(Name n) { _name = n; }
     public void setAlias(String a) { _alias = a; }
     public void setAge(int a) { _age = a; }
+    @JsonIgnore public void setMe(User u) { _me = u; }
     public void setVerified(boolean b) { _isVerified = b; }
     public void setGender(Gender g) { _gender = g; }
     public void setUserImage(byte[] b) { _userImage = b; }

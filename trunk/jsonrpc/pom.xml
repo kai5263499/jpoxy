@@ -5,7 +5,7 @@
     <groupId>org</groupId>
     <artifactId>jpoxy</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.9</version>
+    <version>1.0.11</version>
     <name>jsonrpc</name>
     <url>http://maven.apache.org</url>
 
@@ -42,6 +42,14 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>reflections-repo</id>
+            <name>Reflections Maven2 Repository</name>
+            <url>http://reflections.googlecode.com/svn/repo</url>
+        </repository>
+    </repositories>
+    
     <dependencies>
         <dependency>
             <groupId>org.json</groupId>
@@ -80,6 +88,11 @@
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.6.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.5-RC2</version>
         </dependency>
     </dependencies>
 
