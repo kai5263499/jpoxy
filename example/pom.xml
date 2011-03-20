@@ -5,7 +5,7 @@
     <groupId>org.jpoxy</groupId>
     <artifactId>example</artifactId>
     <packaging>war</packaging>
-    <version>1.0.7</version>
+    <version>1.0.9</version>
     <name>jpoxy-example</name>
     <url>http://maven.apache.org</url>
 
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org</groupId>
             <artifactId>jpoxy</artifactId>
-            <version>1.0.8</version>
+            <version>1.0.9</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
