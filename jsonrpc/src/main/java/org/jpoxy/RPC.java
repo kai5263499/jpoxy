@@ -2,8 +2,6 @@ package org.jpoxy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,6 +31,7 @@ import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
 import java.util.Locale;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.jpoxy.annotate.JpoxyIgnore;
 
 /**
  * This class creates a servlet which implements the JSON-RPC 2.0 specification.
@@ -40,12 +39,6 @@ import org.codehaus.jackson.map.ObjectMapper;
  * @author Wes Widner
  * 
  */
-
-@Retention(RetentionPolicy.RUNTIME)
-@interface Jpoxy {
-  boolean enabled();
-}
-
 @SuppressWarnings("serial")
 public class RPC extends HttpServlet {
 
@@ -89,7 +82,7 @@ public class RPC extends HttpServlet {
         objectmapper = new ObjectMapper();
 
         servletconfig = config;
-        Jpoxy jpoxyannotation;
+        JpoxyIgnore jpoxyignoreannotation;
         try {
             String classnames[] = servletconfig.getInitParameter("rpcclasses").replaceAll("\\s*", "").split(",");
 
@@ -160,8 +153,8 @@ public class RPC extends HttpServlet {
                         continue;
                     }
 
-                    jpoxyannotation = methods[i].getAnnotation(Jpoxy.class);
-                    if(jpoxyannotation != null && !jpoxyannotation.enabled()) {
+                    jpoxyignoreannotation = methods[i].getAnnotation(JpoxyIgnore.class);
+                    if(jpoxyignoreannotation != null && !jpoxyignoreannotation.value()) {
                         continue;
                     }
 
@@ -698,7 +691,7 @@ public class RPC extends HttpServlet {
         return retval;
     }
 
-    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException, JSONException, IOException {
+    private Object runMethod(Method m, int param_count, Object[] methparams) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException, JSONException, IOException, JSONRPCException {
         int modifiers = m.getModifiers();
         Object result = new Object();
         if (Modifier.isStatic(modifiers)) {
@@ -732,7 +725,14 @@ public class RPC extends HttpServlet {
         String resultclassname = result.getClass().getName();
         if(resultclassname.matches(".+\\..+") && !resultclassname.matches("^org\\.json\\..+") && !resultclassname.matches("^java\\.lang\\..+") && !result.getClass().isPrimitive()) {
             String jsonstr = objectmapper.writeValueAsString(result);
-            result = new JSONObject(jsonstr);
+            System.out.println("jsonstr:"+jsonstr);
+            if(jsonstr.matches("^\\[.*\\]$")) {
+                result = new JSONArray(jsonstr);
+            } else if(jsonstr.matches("^\\{.*\\}$")) {
+                result = new JSONObject(jsonstr);
+            } else {
+                throw new JSONRPCException("could not reserialize data returned from method, "+jsonstr, -32601);
+            }
         }
         
         return result;
