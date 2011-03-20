@@ -635,6 +635,7 @@ public class RPC extends HttpServlet {
             if(mobj == null) {
                 paramstohashmap.remove("request");
                 paramstohashmap.remove("method");
+                paramstohashmap.remove("debug");
                 mobj = new JSONObject(paramstohashmap);
             }
 
