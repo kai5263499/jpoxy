@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Target(value = {ElementType.ANNOTATION_TYPE})
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface JpoxyAnnotation {
-
+    
 }
