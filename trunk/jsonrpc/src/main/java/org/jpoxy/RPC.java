@@ -1,5 +1,6 @@
 package org.jpoxy;
 
+import com.google.common.base.Predicate;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -30,8 +31,15 @@ import org.jpoxy.events.JSONRPCMessage;
 import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.Set;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jpoxy.annotate.JpoxyIgnore;
+import org.reflections.Reflections;
+import org.reflections.scanners.TypeElementsScanner;
+import org.reflections.scanners.TypesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 /**
  * This class creates a servlet which implements the JSON-RPC 2.0 specification.
@@ -52,6 +60,75 @@ public class RPC extends HttpServlet {
     private List<JSONRPCEventListener> listeners = new ArrayList<JSONRPCEventListener>();
     private ServletConfig servletconfig;
     private ObjectMapper objectmapper;
+    JpoxyIgnore jpoxyignoreannotation;
+
+    private void processClass(Class c) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        int classmodifiers = c.getModifiers();
+
+        /*
+         * Class must be public and cannot be an abstract or interface
+         */
+        if (Modifier.isAbstract(classmodifiers)
+                || !Modifier.isPublic(classmodifiers)
+                || Modifier.isInterface(classmodifiers)) {
+            LOG.debug("skipping abstract class");
+            return;
+        }
+
+        if (!Modifier.isStatic(classmodifiers)) {
+            try {
+                if (PERSIST_CLASS) {
+                    Object obj = c.newInstance();
+                    rpcobjects.put(c.getName(), obj);
+
+                    if (implementsRPCEventListener(c)) {
+                        addMessageListener((JSONRPCEventListener) obj);
+                    }
+                }
+            } catch (InstantiationException ie) {
+                LOG.error("Caught InstantiationException");
+                return;
+            }
+        }
+
+        Method methods[] = c.getDeclaredMethods();
+
+        for (int i = 0; i < methods.length; i++) {
+            int methodmodifiers = methods[i].getModifiers();
+
+            // Auto-prune non-public methods and any methods that return data types we can't serialize
+            if (!Modifier.isPublic(methodmodifiers) || (
+                    !objectmapper.canSerialize(methods[i].getReturnType()) &&
+                    !methods[i].getReturnType().equals(JSONObject.class) &&
+                    !methods[i].getReturnType().isPrimitive()
+                 )
+               ) {
+                continue;
+            }
+
+            jpoxyignoreannotation = methods[i].getAnnotation(JpoxyIgnore.class);
+            if(jpoxyignoreannotation != null && !jpoxyignoreannotation.value()) {
+                continue;
+            }
+
+            String methodsig = generateMethodSignature(methods[i]);
+
+            LOG.debug("methodsig:" + methodsig);
+
+            if (methodsig == null) {
+                continue;
+            }
+
+            if (rpcmethods.containsKey(methodsig)) {
+                LOG.debug("Skipping duplicate method name: [" + methodsig + "]");
+                continue;
+            }
+
+            LOG.debug("Adding method sig: [" + methodsig + "]");
+
+            rpcmethods.put(methodsig, methods[i]);
+        }
+    }
 
     /**
      * This method reads the servlet configuration for a list of classes it
@@ -82,7 +159,6 @@ public class RPC extends HttpServlet {
         objectmapper = new ObjectMapper();
 
         servletconfig = config;
-        JpoxyIgnore jpoxyignoreannotation;
         try {
             String classnames[] = servletconfig.getInitParameter("rpcclasses").replaceAll("\\s*", "").split(",");
 
@@ -106,85 +182,39 @@ public class RPC extends HttpServlet {
             rpcmethods = new HashMap<String, Method>();
             rpcobjects = new HashMap<String, Object>();
 
-
             for (int o = 0; o < classnames.length; o++) {
                 LOG.debug("examining class: " + classnames[o]);
-                Class<?> c = Class.forName(classnames[o]);
-                int classmodifiers = c.getModifiers();
+                
+                if(classnames[o].matches("^.*\\*$")) {
+                    System.out.println("looking for classes in: "+classnames[o]);
 
-                /*
-                 * Class must be public and cannot be an abstract or interface
-                 */
-                if (Modifier.isAbstract(classmodifiers)
-                        || !Modifier.isPublic(classmodifiers)
-                        || Modifier.isInterface(classmodifiers)) {
-                    LOG.debug("skipping abstract class");
-                    continue;
+                    Reflections reflections = new Reflections(new ConfigurationBuilder()
+                            .setUrls(ClasspathHelper.getUrlsForPackagePrefix("org.jpoxy"))
+                            .setScanners(new TypesScanner()));
+
+                    Set<String> stringSet = reflections.getStore().get(TypesScanner.class).keySet();
+                    for (String key_str : stringSet) {
+                        System.out.println(key_str);
+                    }
+
+                } else {
+                    System.out.println("examining classname: "+classnames[o]);
+                    processClass(Class.forName(classnames[o]));
                 }
 
-                if (!Modifier.isStatic(classmodifiers)) {
-                    try {
-                        if (PERSIST_CLASS) {
-                            Object obj = c.newInstance();
-                            rpcobjects.put(c.getName(), obj);
 
-                            if (implementsRPCEventListener(c)) {
-                                addMessageListener((JSONRPCEventListener) obj);
-                            }
-                        }
-                    } catch (InstantiationException ie) {
-                        LOG.error("Caught InstantiationException");
-                        continue;
-                    }
-                }
-
-                Method methods[] = c.getDeclaredMethods();
-
-                for (int i = 0; i < methods.length; i++) {
-                    int methodmodifiers = methods[i].getModifiers();
-
-                    // Auto-prune non-public methods and any methods that return data types we can't serialize
-                    if (!Modifier.isPublic(methodmodifiers) || (
-                            !objectmapper.canSerialize(methods[i].getReturnType()) &&
-                            !methods[i].getReturnType().equals(JSONObject.class) &&
-                            !methods[i].getReturnType().isPrimitive()
-                         )
-                       ) {
-                        continue;
-                    }
-
-                    jpoxyignoreannotation = methods[i].getAnnotation(JpoxyIgnore.class);
-                    if(jpoxyignoreannotation != null && !jpoxyignoreannotation.value()) {
-                        continue;
-                    }
-
-                    String methodsig = generateMethodSignature(methods[i]);
-
-                    LOG.debug("methodsig:" + methodsig);
-
-                    if (methodsig == null) {
-                        continue;
-                    }
-
-                    if (rpcmethods.containsKey(methodsig)) {
-                        LOG.debug("Skipping duplicate method name: [" + methodsig + "]");
-                        continue;
-                    }
-
-                    LOG.debug("Adding method sig: [" + methodsig + "]");
-
-                    rpcmethods.put(methodsig, methods[i]);
-                }
             }
 
-            if (classnames.length < 1) {
+            if(EXPOSE_METHODS) {
+                Class<?> rpcclass = this.getClass();
+                Method infoMethod = rpcclass.getMethod("listrpcmethods", (Class<?>[]) null);
+                rpcmethods.put("listrpcmethods:0", infoMethod);
+                rpcobjects.put("listrpcmethods", this);
+            }
+
+            if (rpcmethods.isEmpty()) {
                 throw new JSONRPCException("No valid RPC methods found.");
             }
-
-            Class<?> rpcclass = this.getClass();
-            Method infoMethod = rpcclass.getMethod("listrpcmethods", (Class<?>[]) null);
-            rpcmethods.put("listrpcmethods:0", infoMethod);
-            rpcobjects.put("listrpcmethods", this);
 
             JSONRPCMessage msg = generateMessage(JSONRPCMessage.INIT, null, null);
             msg.setServletConfig(servletconfig);
