@@ -42,8 +42,6 @@ public class RPCReflectionsTest extends TestCase {
 
         String responses = tester.getResponses(requests);
 
-        System.out.println("responses: "+responses);
-
         String chunks[] = responses.split("\\r\\n");
 
         JSONObject jsonObj = new JSONObject(chunks[4]);
@@ -57,7 +55,7 @@ public class RPCReflectionsTest extends TestCase {
 
         JSONArray methodArr = resultObj.getJSONArray("method");
         assertNotNull(methodArr);
-        assertEquals(3, methodArr.length());
+        assertEquals(7, methodArr.length());
 
         for (int i = 0; i < methodArr.length(); i++) {
             JSONObject methodObj = methodArr.getJSONObject(i);
