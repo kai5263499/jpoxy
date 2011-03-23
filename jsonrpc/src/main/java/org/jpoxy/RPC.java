@@ -1,6 +1,5 @@
 package org.jpoxy;
 
-import com.google.common.base.Predicate;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -32,14 +31,14 @@ import org.jpoxy.events.JSONRPCMessageEvent;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jpoxy.annotate.JpoxyIgnore;
 import org.reflections.Reflections;
-import org.reflections.scanners.TypeElementsScanner;
 import org.reflections.scanners.TypesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
 
 /**
  * This class creates a servlet which implements the JSON-RPC 2.0 specification.
@@ -184,21 +183,33 @@ public class RPC extends HttpServlet {
 
             for (int o = 0; o < classnames.length; o++) {
                 LOG.debug("examining class: " + classnames[o]);
-                
-                if(classnames[o].matches("^.*\\*$")) {
-                    System.out.println("looking for classes in: "+classnames[o]);
+
+                String patternStr = "(a(b*))+(c*)";
+
+                // Compile and use regular expression
+                Pattern pattern = Pattern.compile("^(.*)\\.(.*)\\*$");
+                Matcher matcher = pattern.matcher(classnames[o]);
+                boolean matchFound = matcher.find();
+
+                if(matchFound) {
+                    LOG.debug("Looking for classes in package: "+classnames[o]);
 
                     Reflections reflections = new Reflections(new ConfigurationBuilder()
-                            .setUrls(ClasspathHelper.getUrlsForPackagePrefix("org.jpoxy"))
+                            .setUrls(ClasspathHelper.getUrlsForPackagePrefix(matcher.group(1)))
                             .setScanners(new TypesScanner()));
 
                     Set<String> stringSet = reflections.getStore().get(TypesScanner.class).keySet();
                     for (String key_str : stringSet) {
-                        System.out.println(key_str);
+                        String additional = "";
+                        if(matcher.group(2).length() > 0) additional = "."+matcher.group(2);
+                        if(key_str.matches(matcher.group(1)+additional+".*") && !key_str.matches(".*\\$.*")) {
+                            LOG.debug("Processing: "+key_str);
+                            processClass(Class.forName(key_str));
+                        }
                     }
 
                 } else {
-                    System.out.println("examining classname: "+classnames[o]);
+                    LOG.debug("Processing: "+classnames[o]);
                     processClass(Class.forName(classnames[o]));
                 }
 
