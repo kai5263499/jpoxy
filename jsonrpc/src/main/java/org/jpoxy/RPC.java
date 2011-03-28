@@ -766,7 +766,6 @@ public class RPC extends HttpServlet {
         String resultclassname = result.getClass().getName();
         if(resultclassname.matches(".+\\..+") && !resultclassname.matches("^org\\.json\\..+") && !resultclassname.matches("^java\\.lang\\..+") && !result.getClass().isPrimitive()) {
             String jsonstr = objectmapper.writeValueAsString(result);
-            System.out.println("jsonstr:"+jsonstr);
             if(jsonstr.matches("^\\[.*\\]$")) {
                 result = new JSONArray(jsonstr);
             } else if(jsonstr.matches("^\\{.*\\}$")) {
