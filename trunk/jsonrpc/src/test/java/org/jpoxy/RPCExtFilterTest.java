@@ -1,13 +1,14 @@
 package org.jpoxy;
 
 import junit.framework.TestCase;
+import org.jpoxy.filter.ExtFilter;
 import org.json.JSONArray;
 
 import org.json.JSONObject;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.testing.ServletTester;
 
-public class RPCReflectionsTest extends TestCase {
+public class RPCExtFilterTest extends TestCase {
 
     private static ServletTester tester;
 
@@ -16,8 +17,12 @@ public class RPCReflectionsTest extends TestCase {
         tester = new ServletTester();
         tester.setContextPath("/");
         ServletHolder sh = tester.addServlet(org.jpoxy.RPC.class, "/api");
-        sh.setInitParameter("rpcclasses", "org.jpoxy.Class*");
+
+        tester.addFilter(ExtFilter.class, "/*", 1);
+
+        sh.setInitParameter("rpcclasses", "org.jpoxy.ClassE");
         sh.setInitParameter("expose_methods", "true");
+        sh.setInitParameter("detailed_errors", "true");
         sh.setInitParameter("detailed_errors", "true");
         tester.start();
     }
@@ -55,7 +60,7 @@ public class RPCReflectionsTest extends TestCase {
 
         JSONArray methodArr = resultObj.getJSONArray("method");
         assertNotNull(methodArr);
-        assertEquals(10, methodArr.length());
+        assertEquals(3, methodArr.length());
 
         for (int i = 0; i < methodArr.length(); i++) {
             JSONObject methodObj = methodArr.getJSONObject(i);
@@ -67,5 +72,42 @@ public class RPCReflectionsTest extends TestCase {
             assertTrue(methodObj.has("returns"));
             assertTrue(methodObj.has("static"));
         }
+    }
+
+    public void testEditUserMethodGet() throws Exception {
+
+        String requests = "GET /api?method=edit&fullname=Thomas%20Anderson&age=48"+
+                " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
+
+        String responses = tester.getResponses(requests);
+
+        System.out.println("requests: "+requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        JSONObject jsonObj = new JSONObject(chunks[4]);
+
+        assertNotNull(jsonObj);
+
+        assertTrue(jsonObj.has("jsonrpc"));
+        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+
+        assertFalse(jsonObj.has("error"));
+        assertTrue(jsonObj.has("result"));
+
+        JSONObject user = jsonObj.getJSONObject("result");
+
+        assertEquals(28, user.getInt("age"));
+        assertEquals("Neo", user.getString("alias"));
+
+        assertTrue(user.has("name"));
+        JSONObject name = user.getJSONObject("name");
+        assertEquals("Thomas", name.getString("first"));
+        assertEquals("Anderson", name.getString("last"));
+
+        assertTrue(user.has("success"));
+        assertTrue(user.getBoolean("success"));
     }
 }
