@@ -76,8 +76,6 @@ public class RPCObjectMarshallingTest extends TestCase {
 
         String responses = tester.getResponses(requests);
 
-        System.out.println("requests: "+requests);
-
         String chunks[] = responses.split("\\r\\n");
 
         checkHeader(chunks);
