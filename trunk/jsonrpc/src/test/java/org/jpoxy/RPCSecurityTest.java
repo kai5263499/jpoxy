@@ -1,7 +1,7 @@
 package org.jpoxy;
 
+import javax.sound.midi.SysexMessage;
 import junit.framework.TestCase;
-import org.jpoxy.filter.ExtFilter;
 import org.json.JSONArray;
 
 import org.json.JSONObject;
@@ -17,9 +17,6 @@ public class RPCSecurityTest extends TestCase {
         tester = new ServletTester();
         tester.setContextPath("/");
         ServletHolder sh = tester.addServlet(org.jpoxy.RPC.class, "/api");
-
-        tester.addFilter(ExtFilter.class, "/*", 1);
-
         sh.setInitParameter("rpcclasses", "org.jpoxy.ClassE");
         sh.setInitParameter("expose_methods", "true");
         sh.setInitParameter("detailed_errors", "true");
@@ -74,14 +71,28 @@ public class RPCSecurityTest extends TestCase {
         }
     }
 
-    public void testJSONPCallbackGet() throws Exception {
+    public void testValidJSONPCallbackGet() throws Exception {
+
+        String requests = "GET /api?method=edit&fullname=Thomas%20Anderson&age=48&callback=cb"+
+                " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
+
+        String responses = tester.getResponses(requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        String expected_ret = "cb({\"result\":{\"alias\":\"Neo\",\"verified\":false,\"age\":28,\"name\":{\"last\":\"Anderson\",\"first\":\"Thomas\"},\"userImage\":null,\"gender\":null},\"jsonrpc\":\"2.0\"})\n";
+
+        assertEquals(expected_ret, chunks[4]);
+    }
+
+    public void testInvalidJSONPCallbackGet() throws Exception {
 
         String requests = "GET /api?method=edit&fullname=Thomas%20Anderson&age=48&callback=cb<script>alert('test');</script>"+
                 " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
         String responses = tester.getResponses(requests);
-
-        System.out.println("requests: "+requests);
 
         String chunks[] = responses.split("\\r\\n");
 
@@ -91,23 +102,8 @@ public class RPCSecurityTest extends TestCase {
 
         assertNotNull(jsonObj);
 
-        assertTrue(jsonObj.has("jsonrpc"));
-        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+        assertTrue(jsonObj.has("error"));
+        assertEquals("Invalid callback parameter specified.", jsonObj.getString("error"));
 
-        assertFalse(jsonObj.has("error"));
-        assertTrue(jsonObj.has("result"));
-
-        JSONObject user = jsonObj.getJSONObject("result");
-
-        assertEquals(28, user.getInt("age"));
-        assertEquals("Neo", user.getString("alias"));
-
-        assertTrue(user.has("name"));
-        JSONObject name = user.getJSONObject("name");
-        assertEquals("Thomas", name.getString("first"));
-        assertEquals("Anderson", name.getString("last"));
-
-        //assertTrue(user.has("success"));
-        //assertTrue(user.getBoolean("success"));
     }
 }

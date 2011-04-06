@@ -454,10 +454,12 @@ public class RPC extends HttpServlet {
         }
 
         if (req.getParameter("callback") != null) {
-            if (req.getParameter("callback").matches("\\?")) {
+            if (req.getParameter("callback").matches("^\\?")) {
                 writer.println("(" + jsonStr + ")");
-            } else {
+            } else if(req.getParameter("callback").matches("^(\\d|\\w)+$")) {
                 writer.println(req.getParameter("callback") + "(" + jsonStr + ")");
+            } else {
+                writer.println("{\"error\":\"Invalid callback parameter specified.\"}");
             }
         } else {
             writer.println(jsonStr);
@@ -670,6 +672,7 @@ public class RPC extends HttpServlet {
                 paramstohashmap.remove("request");
                 paramstohashmap.remove("method");
                 paramstohashmap.remove("debug");
+                paramstohashmap.remove("callback");
                 mobj = new JSONObject(paramstohashmap);
             }
 
