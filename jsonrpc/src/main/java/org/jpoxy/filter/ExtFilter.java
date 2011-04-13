@@ -42,8 +42,6 @@ public class ExtFilter implements Filter  {
                 respObj.put("success", true);
             }
 
-            System.out.println("respObj: "+respObj.toString());
-
             out.write(respObj.toString());
         } catch(JSONException je) {
             out.write(wrapper.toString());
@@ -52,7 +50,6 @@ public class ExtFilter implements Filter  {
 
     @Override
     public void destroy() {
-        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }

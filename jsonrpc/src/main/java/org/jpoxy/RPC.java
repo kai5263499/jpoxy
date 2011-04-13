@@ -15,6 +15,7 @@ import java.util.SimpleTimeZone;
 import java.util.logging.Level;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -58,6 +59,7 @@ public class RPC extends HttpServlet {
     private HashMap<String, Method> rpcmethods;
     private List<JSONRPCEventListener> listeners = new ArrayList<JSONRPCEventListener>();
     private ServletConfig servletconfig;
+    private ServletContext servletcontext;
     private ObjectMapper objectmapper;
     JpoxyIgnore jpoxyignoreannotation;
 
@@ -153,11 +155,14 @@ public class RPC extends HttpServlet {
      */
     @Override
     public final void init(ServletConfig config) throws ServletException {
+        super.init(config);
         LOG.debug("RPC init!");
 
         objectmapper = new ObjectMapper();
 
         servletconfig = config;
+        servletcontext = getServletContext();
+        
         try {
             String classnames[] = servletconfig.getInitParameter("rpcclasses").replaceAll("\\s*", "").split(",");
 
@@ -229,6 +234,7 @@ public class RPC extends HttpServlet {
 
             JSONRPCMessage msg = generateMessage(JSONRPCMessage.INIT, null, null);
             msg.setServletConfig(servletconfig);
+            msg.setServletContext(servletcontext);
             fireMessageEvent(msg);
         } catch (Exception e) {
             long now = System.currentTimeMillis();

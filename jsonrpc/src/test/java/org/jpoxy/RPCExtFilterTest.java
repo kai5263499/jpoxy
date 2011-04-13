@@ -15,15 +15,17 @@ public class RPCExtFilterTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         tester = new ServletTester();
-        tester.setContextPath("/");
         ServletHolder sh = tester.addServlet(org.jpoxy.RPC.class, "/api");
 
-        tester.addFilter(ExtFilter.class, "/*", 1);
+        tester.addFilter(ExtFilter.class, "/*", 15);
 
         sh.setInitParameter("rpcclasses", "org.jpoxy.ClassE");
         sh.setInitParameter("expose_methods", "true");
         sh.setInitParameter("detailed_errors", "true");
         sh.setInitParameter("detailed_errors", "true");
+
+        tester.setContextPath("/");
+
         tester.start();
     }
 
@@ -81,7 +83,7 @@ public class RPCExtFilterTest extends TestCase {
 
         String responses = tester.getResponses(requests);
 
-        //System.out.println("requests: "+requests);
+        //System.out.println("responses: "+responses);
 
         String chunks[] = responses.split("\\r\\n");
 
@@ -107,7 +109,7 @@ public class RPCExtFilterTest extends TestCase {
         assertEquals("Thomas", name.getString("first"));
         assertEquals("Anderson", name.getString("last"));
 
-        //assertTrue(user.has("success"));
-        //assertTrue(user.getBoolean("success"));
+        assertTrue(jsonObj.has("success"));
+        assertTrue(jsonObj.getBoolean("success"));
     }
 }
