@@ -48,7 +48,8 @@ public class RPCExtFilterTest extends TestCase {
         String requests = "GET /api HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
         String responses = tester.getResponses(requests);
-
+        System.out.println("responses: "+responses);
+        
         String chunks[] = responses.split("\\r\\n");
 
         JSONObject jsonObj = new JSONObject(chunks[4]);
@@ -62,7 +63,7 @@ public class RPCExtFilterTest extends TestCase {
 
         JSONArray methodArr = resultObj.getJSONArray("method");
         assertNotNull(methodArr);
-        assertEquals(3, methodArr.length());
+        assertEquals(2, methodArr.length());
 
         for (int i = 0; i < methodArr.length(); i++) {
             JSONObject methodObj = methodArr.getJSONObject(i);
@@ -82,8 +83,6 @@ public class RPCExtFilterTest extends TestCase {
                 " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
 
         String responses = tester.getResponses(requests);
-
-        //System.out.println("responses: "+responses);
 
         String chunks[] = responses.split("\\r\\n");
 

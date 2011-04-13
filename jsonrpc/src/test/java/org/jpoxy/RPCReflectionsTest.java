@@ -55,7 +55,7 @@ public class RPCReflectionsTest extends TestCase {
 
         JSONArray methodArr = resultObj.getJSONArray("method");
         assertNotNull(methodArr);
-        assertEquals(7, methodArr.length());
+        assertEquals(6, methodArr.length());
 
         for (int i = 0; i < methodArr.length(); i++) {
             JSONObject methodObj = methodArr.getJSONObject(i);
