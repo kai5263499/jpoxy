@@ -108,7 +108,7 @@ public class RPC extends HttpServlet {
             }
 
             jpoxyignoreannotation = methods[i].getAnnotation(JpoxyIgnore.class);
-            if(jpoxyignoreannotation != null && !jpoxyignoreannotation.value()) {
+            if(jpoxyignoreannotation != null && jpoxyignoreannotation.value()) {
                 continue;
             }
 
