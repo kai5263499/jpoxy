@@ -462,7 +462,7 @@ public class RPC extends HttpServlet {
         if (req.getParameter("callback") != null) {
             if (req.getParameter("callback").matches("^\\?")) {
                 writer.println("(" + jsonStr + ")");
-            } else if(req.getParameter("callback").matches("^(\\d|\\w)+$")) {
+            } else if(req.getParameter("callback").matches("^(\\d|\\w|\\.)+$")) {
                 writer.println(req.getParameter("callback") + "(" + jsonStr + ")");
             } else {
                 writer.println("{\"error\":\"Invalid callback parameter specified.\"}");
