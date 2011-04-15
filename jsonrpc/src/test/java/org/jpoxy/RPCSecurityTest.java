@@ -104,6 +104,21 @@ public class RPCSecurityTest extends TestCase {
 
         assertTrue(jsonObj.has("error"));
         assertEquals("Invalid callback parameter specified.", jsonObj.getString("error"));
+    }
 
+    public void testValidJSONPCallbackWithDotsGet() throws Exception {
+
+        String requests = "GET /api?method=edit&fullname=Thomas%20Anderson&age=48&callback=cb.cb"+
+                " HTTP/1.1\r\n" + "Host: tester\r\n" + "\r\n";
+
+        String responses = tester.getResponses(requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        String expected_ret = "cb.cb({\"result\":{\"alias\":\"Neo\",\"verified\":false,\"age\":28,\"name\":{\"last\":\"Anderson\",\"first\":\"Thomas\"},\"userImage\":null,\"gender\":null},\"jsonrpc\":\"2.0\"})\n";
+
+        assertEquals(expected_ret, chunks[4]);
     }
 }
