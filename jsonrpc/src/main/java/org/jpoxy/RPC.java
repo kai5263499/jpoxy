@@ -542,9 +542,14 @@ public class RPC extends HttpServlet {
         Enumeration paramNames = request.getParameterNames();
         while (paramNames.hasMoreElements()) {
             String paramName = (String) paramNames.nextElement();
-            String paramValue = request.getParameter(paramName);
 
-            retmap.put(paramName, paramValue);
+            if(request.getParameterValues(paramName) != null && request.getParameterValues(paramName).length > 1) {
+                String[] paramValue = request.getParameterValues(paramName);
+                retmap.put(paramName, paramValue);
+            } else {
+                String paramValue = request.getParameter(paramName);
+                retmap.put(paramName, paramValue);
+            }
         }
 
         retmap.put("request", request);
