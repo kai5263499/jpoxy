@@ -20,6 +20,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.fileupload.FileUploadException;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -34,6 +35,11 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadBase.InvalidContentTypeException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jpoxy.annotate.JpoxyIgnore;
 import org.reflections.Reflections;
@@ -579,7 +585,7 @@ public class RPC extends HttpServlet {
     private Response handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException, JSONException,
             IllegalAccessException, InvocationTargetException,
-            JSONRPCException, ClassNotFoundException, IllegalArgumentException, InstantiationException, NoSuchMethodException {
+            JSONRPCException, ClassNotFoundException, IllegalArgumentException, InstantiationException, NoSuchMethodException, FileUploadException {
 
         Request request = new Request();
         Response response = new Response();
@@ -588,7 +594,13 @@ public class RPC extends HttpServlet {
             request.parseJSON(req.getParameter("json"));
         } else if (req.getParameter("data") != null) {
             request.parseJSON(req.getParameter("data"));
-        } else {
+        } else if(req.getMethod().matches("POST") && req.getHeader("Content-Type") != null && req.getHeader("Content-Type").matches(".*multipart/(form-data|mixed).*")) {
+            FileItemFactory factory = new DiskFileItemFactory();
+            ServletFileUpload upload = new ServletFileUpload(factory);
+            List<FileItem> items = upload.parseRequest(req);
+            if(items.size() > 0) {
+                request.parseJSON(items.get(0).getString());
+            }
         }
 
         if (request.getId() == null) {
