@@ -107,6 +107,7 @@ public class RPC extends HttpServlet {
             if (!Modifier.isPublic(methodmodifiers) || (
                     !objectmapper.canSerialize(methods[i].getReturnType()) &&
                     !methods[i].getReturnType().equals(JSONObject.class) &&
+                    !methods[i].getReturnType().equals(JSONArray.class) &&
                     !methods[i].getReturnType().isPrimitive()
                  )
                ) {

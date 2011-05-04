@@ -60,7 +60,7 @@ public class RPCTest extends TestCase {
 
         JSONArray methodArr = resultObj.getJSONArray("method");
         assertNotNull(methodArr);
-        assertEquals(8, methodArr.length());
+        assertEquals(9, methodArr.length());
 
         for (int i = 0; i < methodArr.length(); i++) {
             JSONObject methodObj = methodArr.getJSONObject(i);
@@ -336,5 +336,35 @@ public class RPCTest extends TestCase {
         assertTrue(resultObj.has("test"));
         assertTrue(resultObj.getBoolean("test"));
 
+    }
+    
+    public void testGetlistMethodGet() throws Exception {
+        String requests = "GET /api?method=getlist"
+                + " HTTP/1.1\r\n" + "Host: tester\r\n"
+                + "\r\n";
+
+        String responses = tester.getResponses(requests);
+        
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        JSONObject jsonObj = new JSONObject(chunks[4]);
+        assertNotNull(jsonObj);
+
+        assertTrue(jsonObj.has("jsonrpc"));
+        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+
+        assertFalse(jsonObj.has("error"));
+        assertTrue(jsonObj.has("result"));
+        JSONArray jarr = jsonObj.getJSONArray("result");
+
+
+        assertNotNull(jarr);
+
+        assertEquals(jarr.get(0), 1);
+        assertEquals(jarr.get(1), 2);
+        assertEquals(jarr.get(2), 3);
+        assertEquals(jarr.get(3), 4);
     }
 }
