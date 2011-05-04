@@ -2,6 +2,7 @@ package org.jpoxy;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import org.json.JSONArray;
 
 import org.json.JSONObject;
 
@@ -46,5 +47,14 @@ public class Example {
     public JSONObject echoJsonObj(JSONObject obj)
             throws UnsupportedEncodingException {
         return obj;
+    }
+    
+    public JSONArray getlist() {
+        JSONArray jarr = new JSONArray();
+        jarr.put(1);
+        jarr.put(2);
+        jarr.put(3);
+        jarr.put(4);
+        return jarr;
     }
 }
