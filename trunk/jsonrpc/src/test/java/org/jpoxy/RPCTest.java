@@ -367,4 +367,35 @@ public class RPCTest extends TestCase {
         assertEquals(jarr.get(2), 3);
         assertEquals(jarr.get(3), 4);
     }
+    
+    public void testEchoJsonObjMethodPost() throws Exception {
+
+        String requests = "POST /api HTTP/1.1\r\n" + "Host: tester\r\n"
+                + "Content-Length: 48\r\n"
+                + "\r\n"
+                + "{\"method\":\"echoJsonObj\", \"params\":{\"test\":true}}\r\n";
+        
+        String responses = tester.getResponses(requests);
+
+        String chunks[] = responses.split("\\r\\n");
+
+        checkHeader(chunks);
+
+        JSONObject jsonObj = new JSONObject(chunks[4]);
+        assertNotNull(jsonObj);
+
+        assertTrue(jsonObj.has("jsonrpc"));
+        assertEquals("2.0", jsonObj.getString("jsonrpc"));
+
+        assertFalse(jsonObj.has("error"));
+        assertTrue(jsonObj.has("result"));
+        String jsonStr = jsonObj.getString("result");
+
+        JSONObject resultObj = new JSONObject(jsonStr);
+
+        assertNotNull(resultObj);
+
+        assertTrue(resultObj.has("test"));
+        assertTrue(resultObj.getBoolean("test"));
+    }
 }
