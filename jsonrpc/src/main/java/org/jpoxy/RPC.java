@@ -1,5 +1,6 @@
 package org.jpoxy;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -37,7 +38,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadBase.InvalidContentTypeException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -564,6 +564,24 @@ public class RPC extends HttpServlet {
         return retmap;
     }
 
+    public static String getRawPostData(HttpServletRequest req) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            BufferedReader reader = req.getReader();
+            
+            String line;
+            do {
+                line = reader.readLine();
+                sb.append(line).append("\n");
+            } while (line != null);
+            reader.close();
+        } catch(IOException e) {
+            return null;
+        }
+
+        return sb.toString();
+    }
+    
     /**
      *
      * @param req
@@ -590,18 +608,34 @@ public class RPC extends HttpServlet {
 
         Request request = new Request();
         Response response = new Response();
+        
+        if(req.getMethod().matches("POST")) {
+            if(req.getHeader("Content-Type") != null && req.getHeader("Content-Type").matches(".*multipart/(form-data|mixed).*")) {
+                FileItemFactory factory = new DiskFileItemFactory();
+                ServletFileUpload upload = new ServletFileUpload(factory);
+                List<FileItem> items = upload.parseRequest(req);
+                if(items.size() > 0) {
+                    request.parseJSON(items.get(0).getString());
+                }
+            } else {
+                req = new HttpServletRequestWrapper(req);
+                String body = getRawPostData(req);
 
-        if (req.getParameter("json") != null) {
+                if(body != null) {
+                    Pattern pattern = Pattern.compile("^\\{");
+                    Matcher matcher = pattern.matcher(body);
+                    boolean matchFound = matcher.find();
+
+                    if (matchFound) {
+                        request.parseJSON(body);
+                        req = new HttpServletRequestWrapper(req, "".getBytes(), new HashMap());
+                    }
+                }
+            }
+        } else if (req.getParameter("json") != null) {
             request.parseJSON(req.getParameter("json"));
         } else if (req.getParameter("data") != null) {
             request.parseJSON(req.getParameter("data"));
-        } else if(req.getMethod().matches("POST") && req.getHeader("Content-Type") != null && req.getHeader("Content-Type").matches(".*multipart/(form-data|mixed).*")) {
-            FileItemFactory factory = new DiskFileItemFactory();
-            ServletFileUpload upload = new ServletFileUpload(factory);
-            List<FileItem> items = upload.parseRequest(req);
-            if(items.size() > 0) {
-                request.parseJSON(items.get(0).getString());
-            }
         }
 
         if (request.getId() == null) {
@@ -652,8 +686,9 @@ public class RPC extends HttpServlet {
         Object result = new Object();
         Method m = null;
 
-        HashMap<String, ?> paramstohashmap = reqParamsToHashMap(req);
-
+        HashMap<String, ?> paramstohashmap = null;
+        paramstohashmap = reqParamsToHashMap(req);
+        
         Object methparams[] = null;
         if (rpcmethods.containsKey(method + ":JSONObject")) {
             m = rpcmethods.get(method + ":JSONObject");
