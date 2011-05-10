@@ -196,9 +196,6 @@ public class RPC extends HttpServlet {
             for (int o = 0; o < classnames.length; o++) {
                 LOG.debug("examining class: " + classnames[o]);
 
-                String patternStr = "(a(b*))+(c*)";
-
-                // Compile and use regular expression
                 Pattern pattern = Pattern.compile("^(.*)\\.(.*)\\*$");
                 Matcher matcher = pattern.matcher(classnames[o]);
                 boolean matchFound = matcher.find();
