@@ -1,33 +1,44 @@
+
 <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee ">
 
-<!-- Servlets -->
-	<servlet>
-		<servlet-name>example</servlet-name>
-		<servlet-class>org.jpoxy.RPC</servlet-class>
-                <load-on-startup>1</load-on-startup>
-		<init-param>
-			<param-name>rpcclasses</param-name>
-			<param-value>org.jpoxy.Example</param-value>
-		</init-param>
-		<init-param>
-			<param-name>expose_methods</param-name>
-			<param-value>true</param-value>
-		</init-param>
-		<init-param>
-			<param-name>persist_class</param-name>
-			<param-value>true</param-value>
-		</init-param>
-		<init-param>
-			<param-name>detailed_errors</param-name>
-			<param-value>true</param-value>
-		</init-param>
-	</servlet>
+    <!-- Servlets -->
+    <servlet>
+        <servlet-name>example</servlet-name>
+        <servlet-class>org.jpoxy.RPC</servlet-class>
+        <load-on-startup>1</load-on-startup>
+        <init-param>
+            <param-name>rpcclasses</param-name>
+            <param-value>org.jpoxy.Example</param-value>
+        </init-param>
+        <init-param>
+            <param-name>expose_methods</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>persist_class</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>detailed_errors</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </servlet>
 
-	<servlet-mapping>
-		<servlet-name>example</servlet-name>
-		<url-pattern>/</url-pattern>
-	</servlet-mapping>
+    <filter>
+        <filter-name>certauthfilter</filter-name>
+        <filter-class>org.jpoxy.filter.CertAuth</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>certauthfilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <servlet-mapping>
+        <servlet-name>example</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
 
 </web-app>
