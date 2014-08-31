@@ -204,7 +204,7 @@ public class RPC extends HttpServlet {
                     LOG.debug("Looking for classes in package: "+classnames[o]);
 
                     Reflections reflections = new Reflections(new ConfigurationBuilder()
-                            .setUrls(ClasspathHelper.getUrlsForPackagePrefix(matcher.group(1)))
+                            .setUrls(ClasspathHelper.forPackage(matcher.group(1)))
                             .setScanners(new TypesScanner()));
 
                     Set<String> stringSet = reflections.getStore().get(TypesScanner.class).keySet();

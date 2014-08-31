@@ -62,7 +62,7 @@ public class Request {
 					.length());
 			param_keys = new String[param_count];
 
-			Iterator<String> paramsIterator = paramObj.sortedKeys();
+			Iterator<String> paramsIterator = paramObj.keys();
 
 			int c = 0;
 			while (paramsIterator.hasNext()) {
